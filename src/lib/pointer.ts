@@ -1,5 +1,9 @@
 // The pointer, shared by everything on the site that reacts to it, and one animation loop for all of it.
 // A block "leans" towards the cursor, and light slides over the glass under the cursor.
+// Touch screens have no cursor, so there is nothing to follow and the loop does not run.
+// While the page scrolls the loop rests: scrolling matters more than a few pixels of tilt.
+
+import { scrolledRecently } from "./motion";
 
 type Tilt = {
   element: HTMLElement;
@@ -26,8 +30,11 @@ let observer: IntersectionObserver | null = null;
 let listening = false;
 let frame = 0;
 let phase = 0;
+let lightsStale = false;
+let wasScrolling = false;
 
 const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const noCursor = () => reduced() || window.matchMedia("(hover: none)").matches;
 
 function onPointerMove(event: PointerEvent) {
   if (event.pointerType === "touch") return;
@@ -36,13 +43,22 @@ function onPointerMove(event: PointerEvent) {
   pointer.clientX = event.clientX;
   pointer.clientY = event.clientY;
   pointer.moved = true;
+  lightsStale = true;
 }
 
 function tick(now: number) {
   frame = requestAnimationFrame(tick);
   if (document.hidden) return;
+  if (scrolledRecently()) {
+    wasScrolling = true;
+    return;
+  }
+  if (wasScrolling) {
+    wasScrolling = false;
+    lightsStale = true;
+  }
 
-  // Until the pointer moves, and always on phones, the blocks sway on their own.
+  // Until the pointer moves, the blocks sway on their own.
   if (!pointer.moved) {
     target.x = Math.sin(now / 2600) * 0.6;
     target.y = Math.cos(now / 3300) * 0.35;
@@ -63,7 +79,8 @@ function tick(now: number) {
   });
 
   // Read every box first and write afterwards, so the browser measures the page only once.
-  if (pointer.moved) {
+  if (pointer.moved && lightsStale) {
+    lightsStale = false;
     const boxes: [HTMLElement, DOMRect][] = [];
     lights.forEach((element) => {
       if (inView.has(element)) boxes.push([element, element.getBoundingClientRect()]);
@@ -116,7 +133,7 @@ function unwatch(element: HTMLElement) {
 }
 
 export function addTilt(element: HTMLElement, { depth = 1, max = 9, float = false }: TiltOptions = {}) {
-  if (reduced()) return () => {};
+  if (noCursor()) return () => {};
   const item: Tilt = { element, depth, max, float, phase: (phase += 1.7), lift: 0, hovered: false };
   const onEnter = () => {
     item.hovered = true;
@@ -140,7 +157,7 @@ export function addTilt(element: HTMLElement, { depth = 1, max = 9, float = fals
 }
 
 export function addLight(element: HTMLElement) {
-  if (reduced()) return () => {};
+  if (noCursor()) return () => {};
   lights.add(element);
   watch(element);
   syncLoop();

@@ -51,26 +51,38 @@ export function Process() {
     const reduced = prefersReducedMotion();
     const pinned = window.matchMedia("(min-width: 1000px) and (min-height: 640px)");
 
+    // The rail runs from the first step to the last, the line grows along it.
+    let centers: number[] = [];
+    let travel = 1;
+    let lastP = -1;
+    let lastStep = -1;
+    const measure = () => {
+      centers = dots.map((dot, index) => steps[index].offsetTop + dot.offsetTop + dot.offsetHeight / 2);
+      travel = Math.max(1, section.offsetHeight - window.innerHeight);
+      rail.style.top = `${centers[0]}px`;
+      rail.style.height = `${centers[2] - centers[0]}px`;
+      lastP = -1;
+    };
+
     const update = () => {
       let p = 1;
-      if (!reduced && pinned.matches) {
-        const box = section.getBoundingClientRect();
-        p = clamp(-box.top / Math.max(1, section.offsetHeight - window.innerHeight));
-      }
+      if (!reduced && pinned.matches) p = clamp(-section.getBoundingClientRect().top / travel);
+      // Above and below the section, and on phones, the progress does not change: nothing to redraw.
+      if (p === lastP) return;
+      lastP = p;
 
-      // The rail runs from the first step to the last, the line grows along it.
-      const centers = dots.map((dot, index) => steps[index].offsetTop + dot.offsetTop + dot.offsetHeight / 2);
       const lineEnd =
         p < 0.34
           ? centers[0] + (centers[1] - centers[0]) * ease(p, 0.03, 0.34)
           : centers[1] + (centers[2] - centers[1]) * ease(p, 0.36, 0.68);
-      rail.style.top = `${centers[0]}px`;
-      rail.style.height = `${centers[2] - centers[0]}px`;
       rail.style.setProperty("--filled", `${(lineEnd - centers[0]).toFixed(1)}px`);
 
       const current = p < 0.32 ? 0 : p < 0.66 ? 1 : 2;
-      steps.forEach((step, index) => step.classList.toggle("is-on", index <= current));
-      address.textContent = win.addresses[current];
+      if (current !== lastStep) {
+        lastStep = current;
+        steps.forEach((step, index) => step.classList.toggle("is-on", index <= current));
+        address.textContent = win.addresses[current];
+      }
 
       blocks.forEach((block, index) => {
         const timing = BLOCK_TIMING[index];
@@ -113,9 +125,18 @@ export function Process() {
       lead.style.transform = `translateY(${((1 - leadIn) * -18).toFixed(1)}px) scale(${(0.96 + 0.04 * leadIn).toFixed(3)})`;
     };
 
+    const refresh = () => {
+      measure();
+      update();
+    };
+    measure();
     const stop = subscribeScroll(update);
-    document.fonts?.ready.then(update).catch(() => {});
-    return stop;
+    window.addEventListener("resize", refresh);
+    document.fonts?.ready.then(refresh).catch(() => {});
+    return () => {
+      stop();
+      window.removeEventListener("resize", refresh);
+    };
   }, []);
 
   return (

@@ -12,6 +12,24 @@ export const smooth = (t: number) => t * t * (3 - 2 * t);
 export const prefersReducedMotion = () =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+let lastScrollAt = -Infinity;
+let watchingScroll = false;
+
+// True while the page is moving. Decorations step aside for that time, so scrolling gets the whole device.
+export function scrolledRecently(ms = 160) {
+  if (!watchingScroll) {
+    watchingScroll = true;
+    window.addEventListener(
+      "scroll",
+      () => {
+        lastScrollAt = performance.now();
+      },
+      { passive: true },
+    );
+  }
+  return performance.now() - lastScrollAt < ms;
+}
+
 // Calls the callback at most once per frame on scroll and resize, and once right away.
 export function subscribeScroll(callback: () => void) {
   let queued = false;

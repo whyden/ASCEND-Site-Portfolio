@@ -76,6 +76,8 @@ export function HeroScene() {
     let dy = 0;
     let maxScale = 1;
     let distance = 1;
+    let lastP = -1;
+    let lastS = -1;
 
     // The logo leans after the light of the background, so its offset is read every time.
     const leanOffset = () => {
@@ -98,11 +100,12 @@ export function HeroScene() {
       const halfThickness = (90.5 * base.width) / 1000;
       maxScale = (Math.hypot(stageBox.width, stageBox.height) / 2 / halfThickness) * 1.25;
       distance = Math.max(1, scene.offsetHeight - stageBox.height);
+      lastP = -1;
+      lastS = -1;
     };
 
     // The outline of both facets on screen, exactly where the growing logo is now.
-    const facetPath = (eased: number, scale: number) => {
-      const now = leanOffset();
+    const facetPath = (eased: number, scale: number, now: { x: number; y: number }) => {
       const originX = base.left + base.width * 0.3487;
       const originY = base.top + base.height * 0.558;
       const point = ([u, v]: [number, number]) => {
@@ -118,8 +121,13 @@ export function HeroScene() {
 
     const update = () => {
       const p = clamp(window.scrollY / distance);
+      // Past the end of the scene nothing changes, so the rest of the page pays nothing for it.
+      if (p === lastP && (p === 0 || p === 1)) return;
+      lastP = p;
       const d = range(p, 0, DIVE_END);
       const s = range(p, DIVE_END, 1);
+      // Read before anything is written, so the browser does not have to recalculate styles twice.
+      const lean = d > 0.3 && d < 0.985 ? leanOffset() : null;
       const eased = smooth(range(d, 0.02, 1));
       const scale = Math.pow(maxScale, eased);
       logo.style.transform = `translate(${(dx * eased).toFixed(1)}px, ${(dy * eased).toFixed(1)}px) scale(${scale.toFixed(3)})`;
@@ -141,14 +149,17 @@ export function HeroScene() {
       stage.classList.toggle("is-through", through);
 
       // The offer: appears inside the logo, stays, then leaves upwards before the next section.
-      stage.style.setProperty("--s", s.toFixed(4));
+      if (s !== lastS) {
+        lastS = s;
+        statement.style.setProperty("--s", s.toFixed(4));
+      }
       const appear = range(d, 0.3, 0.5);
       const leave = range(s, 0.82, 1);
       const shown = appear * (1 - leave);
       statement.style.opacity = shown.toFixed(3);
       statement.style.visibility = shown > 0 ? "visible" : "hidden";
       statement.style.transform = `translateY(${(-leave * 60).toFixed(1)}px)`;
-      statement.style.clipPath = through ? "none" : facetPath(eased, scale);
+      statement.style.clipPath = lean && !through ? facetPath(eased, scale, lean) : "none";
     };
 
     measure();

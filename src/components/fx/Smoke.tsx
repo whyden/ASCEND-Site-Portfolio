@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import { MARK } from "@/lib/logo";
-import { prefersReducedMotion } from "@/lib/motion";
+import { prefersReducedMotion, scrolledRecently } from "@/lib/motion";
 
 // The living background: soft light flowing in layers, drawn on the graphics card.
 // It leans towards the cursor and glows under it, and a press sends a wave through it.
 // When the mouse rests, the light wanders across the screen by itself.
 // Two palettes: dark for the black screens and light for the fog ones.
-// It is drawn at half size about 30 times a second. A slow device gets a simpler picture,
+// The picture is soft, so it is drawn small and stretched, about 30 times a second, and less often
+// while the page scrolls. Phones get one layer of detail less. A slow device gets a simpler picture,
 // and without a graphics card a calm CSS glow stays instead.
 // On the black screens the big soft logo stands under the light.
 
@@ -28,7 +29,7 @@ float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
   return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}
 float fbm(vec2 p){float v=0.,a=.5;mat2 m=mat2(1.6,1.2,-1.2,1.6);
-  for(int i=0;i<3;i++){v+=a*noise(p);p=m*p;a*=.5;}return v;}
+  for(int i=0;i<OCTAVES;i++){v+=a*noise(p);p=m*p;a*=.5;}return v*NORM;}
 void main(){
   vec2 uv=gl_FragCoord.xy/uRes;
   vec2 asp=vec2(uRes.x/uRes.y,1.);
@@ -90,7 +91,7 @@ function drawSoftMark(canvas: HTMLCanvasElement) {
   context.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-function createLight(canvas: HTMLCanvasElement) {
+function createLight(canvas: HTMLCanvasElement, small: boolean) {
   // A software renderer would make the whole page slow, so it gets the CSS glow instead.
   const gl = canvas.getContext("webgl", {
     alpha: true,
@@ -110,7 +111,9 @@ function createLight(canvas: HTMLCanvasElement) {
     return gl.getShaderParameter(shader, gl.COMPILE_STATUS) ? shader : null;
   };
   const vertex = compile(gl.VERTEX_SHADER, VERTEX);
-  const fragment = compile(gl.FRAGMENT_SHADER, FRAGMENT);
+  // On phones one layer of detail less, with the brightness kept the same.
+  const defines = small ? "#define OCTAVES 2\n#define NORM 1.1667\n" : "#define OCTAVES 3\n#define NORM 1.\n";
+  const fragment = compile(gl.FRAGMENT_SHADER, defines + FRAGMENT);
   const program = gl.createProgram();
   if (!vertex || !fragment || !program) return null;
   gl.attachShader(program, vertex);
@@ -126,14 +129,14 @@ function createLight(canvas: HTMLCanvasElement) {
   const names = ["uRes", "uT", "uPtr", "uPower", "uA", "uB", "uGain", "uPulse"] as const;
   const u = Object.fromEntries(names.map((name) => [name, gl.getUniformLocation(program, name)]));
 
-  let scale = 0.5;
+  let scale = small ? 0.5 : 0.42;
   let width = 1;
   let height = 1;
   return {
     resize(w: number, h: number) {
       width = w;
       height = h;
-      canvas.width = Math.max(2, Math.round(Math.min(w, 2200) * scale));
+      canvas.width = Math.max(2, Math.round(Math.min(w, 1800) * scale));
       canvas.height = Math.max(2, Math.round((h * canvas.width) / Math.max(w, 1)));
       gl.viewport(0, 0, canvas.width, canvas.height);
     },
@@ -203,9 +206,10 @@ export function Smoke({ className = "", palette = "dark", logo = true, gain = 0.
     // a new one, and the browser paints it white, so the old canvas always leaves with its context.
     const canvas = document.createElement("canvas");
     slot.appendChild(canvas);
+    const small = window.matchMedia("(hover: none), (max-width: 699px)").matches;
     let light: ReturnType<typeof createLight> = null;
     try {
-      light = createLight(canvas);
+      light = createLight(canvas, small);
     } catch {
       light = null;
     }
@@ -252,11 +256,6 @@ export function Smoke({ className = "", palette = "dark", logo = true, gain = 0.
     document.addEventListener("pointerdown", onDown, { passive: true });
 
     let visible = false;
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-    });
-    observer.observe(slot);
-
     let frame = 0;
     let count = 0;
     let last = 0;
@@ -277,11 +276,13 @@ export function Smoke({ className = "", palette = "dark", logo = true, gain = 0.
     const onLost = () => stop();
     canvas.addEventListener("webglcontextlost", onLost);
 
+    // Off screen the loop does not run at all, it starts again when the light comes into view.
     const step = (now: number) => {
+      frame = 0;
+      if (!visible || document.hidden || stopped) return;
       frame = requestAnimationFrame(step);
       const dtMs = Math.min(now - (last || now), 60);
       last = now;
-      if (!visible || document.hidden) return;
       const dt = dtMs / 1000;
       const t = now / 1000;
       count += 1;
@@ -306,8 +307,11 @@ export function Smoke({ className = "", palette = "dark", logo = true, gain = 0.
         lean.style.transform = `translate3d(${lx.toFixed(2)}px, ${ly.toFixed(2)}px, 0)`;
       }
 
-      // Thirty pictures a second are enough for slow light; while the cursor moves, every frame.
-      if (!moving && now - lastDraw < 30) return;
+      // Thirty pictures a second are enough for slow light, about fifty while the cursor moves,
+      // and twenty during scrolling, when the page itself needs the graphics card.
+      // Behind an open window the light waits.
+      const gap = scrolledRecently() ? 48 : moving ? 20 : 30;
+      if (now - lastDraw < gap || document.querySelector("dialog[open]")) return;
       lastDraw = now;
 
       const mix = Math.min(1, Math.max(0, mixRef?.current ?? 0));
@@ -340,12 +344,21 @@ export function Smoke({ className = "", palette = "dark", logo = true, gain = 0.
         }
       }
     };
-    frame = requestAnimationFrame(step);
+    const wake = () => {
+      if (!frame && visible && !document.hidden && !stopped) frame = requestAnimationFrame(step);
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      wake();
+    });
+    observer.observe(slot);
+    document.addEventListener("visibilitychange", wake);
 
     return () => {
       cancelAnimationFrame(frame);
       sizes.disconnect();
       observer.disconnect();
+      document.removeEventListener("visibilitychange", wake);
       window.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("webglcontextlost", onLost);

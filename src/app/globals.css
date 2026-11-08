@@ -719,10 +719,14 @@ html[data-intro="play"] .intro {
   top: 0;
   height: 100svh;
 }
-/* Right after the flight into the facet the fog is plain, and the light fades in as the section comes up. */
-.services > .smoke {
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 70svh);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 70svh);
+/* Right after the flight into the facet the fog is plain, and the light fades in as the section comes up.
+   A fog gradient over the light looks the same as a mask and costs far less on a picture that changes every frame. */
+.services > .smoke::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 70svh;
+  background: linear-gradient(to bottom, var(--fog), rgba(232, 232, 230, 0));
 }
 /* Without a graphics card, or on a device too slow for it: a calm glow instead. */
 .smoke-haze {
@@ -978,8 +982,6 @@ html[data-intro="play"] .hero-lockup {
   overflow: hidden;
   background: radial-gradient(130% 140% at 10% 0%, #2e2e2e, #121212 48%, #060606);
   transform-origin: 50% 0;
-  /* Its own layer: StackCards.tsx changes the scale on every scroll, and this keeps it from repainting. */
-  will-change: transform;
 }
 .gc-text {
   display: flex;
@@ -1097,6 +1099,8 @@ html[data-intro="play"] .hero-lockup {
   .gcard {
     position: sticky;
     top: calc(var(--cards-top) + var(--i) * 14px);
+    /* Its own layer: StackCards.tsx changes the scale on every scroll, and this keeps it from repainting. */
+    will-change: transform;
   }
 }
 
@@ -2798,7 +2802,7 @@ input[type="range"]::-moz-range-thumb {
   align-items: center;
   min-height: 100svh;
   padding-block: clamp(88px, 10vw, 150px);
-  overflow: hidden;
+  overflow: clip;
   background: var(--bg);
   color: var(--fg);
 }
@@ -2823,40 +2827,16 @@ input[type="range"]::-moz-range-thumb {
 .final-sub {
   max-width: 52ch;
 }
-.final-done {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.5);
-  -webkit-backdrop-filter: blur(24px);
-  backdrop-filter: blur(24px);
-  color: var(--fg);
-  opacity: 0;
-  visibility: hidden;
-  transition:
-    opacity 0.8s var(--ease-rise),
-    visibility 0s linear 0.8s;
-}
-.final-done .wrap {
-  display: grid;
-  gap: 20px;
-}
-.is-sent .final-done {
-  opacity: 1;
-  visibility: visible;
-  transition-delay: 0s;
-}
+/* The questionnaire is taller than the title, so the title stays beside it while it scrolls. */
 @media (min-width: 960px) {
   .final-grid {
-    grid-template-columns: 7fr 5fr;
-    align-items: end;
+    grid-template-columns: 6fr 6fr;
+    align-items: start;
   }
-}
-.form {
-  display: grid;
-  gap: 18px;
+  .final-text {
+    position: sticky;
+    top: 112px;
+  }
 }
 .field {
   position: relative;
@@ -2900,29 +2880,61 @@ input[type="range"]::-moz-range-thumb {
 .field:focus-within::after {
   transform: scaleX(1);
 }
-.form-trap {
-  position: absolute;
-  left: -9999px;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
+/* The questionnaire on the last screen. */
+.brief {
+  display: grid;
+  gap: clamp(18px, 2.2svh, 24px);
 }
-.form-submit {
-  margin-top: 8px;
+.brief-group {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  border: 0;
+}
+.brief-group legend {
+  padding: 0;
+  margin-bottom: 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.brief .chip span {
+  padding: 9px 13px;
+}
+/* The ready message and what to do with it. */
+.tg-message {
+  display: grid;
+  gap: 12px;
+}
+.tg-label {
+  display: grid;
+  gap: 8px;
+}
+.tg-text {
   width: 100%;
+  min-height: 118px;
+  max-height: 260px;
+  padding: 12px 14px;
+  font: 400 14px / 1.5 var(--text);
+  color: inherit;
+  background: rgba(232, 232, 230, 0.06);
+  border: 1px solid rgba(232, 232, 230, 0.18);
+  border-radius: var(--radius-button);
+  outline: none;
+  resize: none;
+  field-sizing: content;
 }
-.form-note {
+.tg-text:focus-visible {
+  border-color: rgba(232, 232, 230, 0.5);
+}
+.tg-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+.tg-note {
   font-size: 13px;
   line-height: 1.45;
   color: var(--soft);
-}
-.form-error {
-  font-size: 14px;
-  font-weight: 500;
-}
-.form-error a {
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 /* Calculator
@@ -3075,6 +3087,39 @@ input[type="range"]::-moz-range-thumb {
   display: grid;
   gap: 28px;
   justify-items: start;
+}
+
+/* Touch screens and phones: no live blur and no extra layers. Nothing follows a cursor here,
+   and blur over a moving background is the most expensive thing a phone can draw.
+   Backgrounds get denser instead, so text stays just as readable.
+   ========================================================================== */
+@media (hover: none), (max-width: 699px) {
+  .site-header {
+    --header-bg: rgba(20, 20, 20, 0.96);
+  }
+  .header-bar,
+  .menu {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .menu {
+    background: rgba(20, 20, 20, 0.97);
+  }
+  .sc-race,
+  .sc-phone,
+  .sc-lead,
+  .sc-chat-lead {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgba(26, 26, 26, 0.96);
+  }
+  .scene > *,
+  .process-right {
+    will-change: auto;
+  }
+  .lit::after {
+    display: none;
+  }
 }
 
 /* Reduced motion: everything in place, no pinning and no flying

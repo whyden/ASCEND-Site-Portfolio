@@ -10,13 +10,9 @@ export function Footer() {
         <div className="footer-contacts">
           <p>
             Telegram:{" "}
-            {site.telegramIsSet ? (
-              <a href={site.telegramUrl} target="_blank" rel="noreferrer">
-                @{site.telegram}
-              </a>
-            ) : (
-              <span>@{site.telegram}</span>
-            )}
+            <a href={site.telegramUrl} target="_blank" rel="noreferrer">
+              @{site.telegram}
+            </a>
           </p>
           <p>{site.hours}</p>
         </div>

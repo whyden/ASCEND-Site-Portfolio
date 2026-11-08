@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Mark } from "@/components/brand/Logo";
+import { withBase } from "@/config/site";
 import { siteHost, type CaseStudy } from "@/data/cases";
 
 // Pictures of the cases: real screenshots of the sites, in a browser window or a phone.
@@ -13,7 +14,7 @@ export function CasePreview({ item, sizes = CARD_SIZES }: { item: CaseStudy; siz
     return (
       <Image
         className="shot-img"
-        src={item.shots.desktop}
+        src={withBase(item.shots.desktop)}
         alt={`${item.brand}: первый экран сайта`}
         fill
         sizes={sizes}
@@ -40,7 +41,7 @@ export function BrowserShot({ src, host, alt, sizes }: { src: string; host: stri
         <span>{host}</span>
       </div>
       <div className="shot-frame">
-        <Image className="shot-img" src={src} alt={alt} fill sizes={sizes} />
+        <Image className="shot-img" src={withBase(src)} alt={alt} fill sizes={sizes} />
       </div>
     </figure>
   );
@@ -51,7 +52,7 @@ export function PhoneShot({ src, alt, sizes }: { src: string; alt: string; sizes
   return (
     <figure className="shot-phone">
       <div className="shot-frame">
-        <Image className="shot-img" src={src} alt={alt} fill sizes={sizes} />
+        <Image className="shot-img" src={withBase(src)} alt={alt} fill sizes={sizes} />
       </div>
     </figure>
   );

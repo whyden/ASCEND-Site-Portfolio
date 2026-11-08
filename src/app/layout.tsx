@@ -9,7 +9,7 @@ import { SmoothScroll } from "@/components/fx/SmoothScroll";
 import { Analytics } from "@/components/layout/Analytics";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
-import { site } from "@/config/site";
+import { basePath, site } from "@/config/site";
 import "./globals.css";
 
 const jost = Jost({
@@ -49,7 +49,7 @@ export const viewport: Viewport = {
 
 // Runs before first paint and decides whether the intro plays: only on the main page,
 // once per session, and never with reduced motion. The timer is a safety net if scripts fail.
-const INTRO_SCRIPT = `(function(){var d=document.documentElement,s="done";try{if(location.pathname==="/"&&!location.hash&&sessionStorage.getItem("ascend-intro")!=="1"&&!matchMedia("(prefers-reduced-motion: reduce)").matches)s="play"}catch(e){}window.__ascendIntro=s;d.setAttribute("data-intro",s);if(s==="play")setTimeout(function(){if(window.__ascendIntro==="play"){window.__ascendIntro="done";d.setAttribute("data-intro","done")}},7000)})()`;
+const INTRO_SCRIPT = `(function(){var d=document.documentElement,s="done";try{if((location.pathname==="${basePath}/"||location.pathname==="${basePath}")&&!location.hash&&sessionStorage.getItem("ascend-intro")!=="1"&&!matchMedia("(prefers-reduced-motion: reduce)").matches)s="play"}catch(e){}window.__ascendIntro=s;d.setAttribute("data-intro",s);if(s==="play")setTimeout(function(){if(window.__ascendIntro==="play"){window.__ascendIntro="done";d.setAttribute("data-intro","done")}},7000)})()`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

@@ -4,12 +4,12 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowUpRight, Mark, Wordmark } from "@/components/brand/Logo";
 import { TransitionLink } from "@/components/fx/TransitionLink";
-import { nav } from "@/config/site";
+import { nav, pagePath } from "@/config/site";
 
 const CASES = "/cases";
 
 export function Header() {
-  const pathname = usePathname();
+  const pathname = pagePath(usePathname());
   const [open, setOpen] = useState(false);
 
   // The menu is a small window: it closes on Escape and on a tap anywhere outside it.

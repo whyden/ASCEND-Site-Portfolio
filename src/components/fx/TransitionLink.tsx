@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ComponentProps, MouseEvent } from "react";
+import { pagePath, withBase } from "@/config/site";
 import { scrollToId, scrollToStart } from "@/lib/scroll";
 import { coverPage } from "@/lib/transition";
 
@@ -20,16 +21,17 @@ export function TransitionLink({ href, onClick, ...rest }: Props) {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
 
     const [path, hash] = href.split("#");
-    const targetPath = path || pathname;
+    const current = pagePath(pathname);
+    const targetPath = pagePath(path || current);
     event.preventDefault();
 
-    if (targetPath === pathname) {
+    if (targetPath === current) {
       if (hash) {
         scrollToId(hash);
         window.history.replaceState(null, "", `#${hash}`);
       } else {
         scrollToStart();
-        window.history.replaceState(null, "", pathname);
+        window.history.replaceState(null, "", withBase(pathname));
       }
       return;
     }
@@ -38,5 +40,6 @@ export function TransitionLink({ href, onClick, ...rest }: Props) {
     router.push(href, { scroll: false });
   };
 
-  return <Link href={href} onClick={handleClick} {...rest} />;
+  // No prefetching: on plain files Next asks for a file that a static build does not have.
+  return <Link href={href} prefetch={false} onClick={handleClick} {...rest} />;
 }

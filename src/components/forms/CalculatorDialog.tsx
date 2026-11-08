@@ -16,7 +16,7 @@ import {
 import { prefersReducedMotion } from "@/lib/motion";
 import { pauseScroll, resumeScroll } from "@/lib/scroll";
 import { OPEN_CALC_EVENT } from "./CalcButton";
-import { LeadForm } from "./LeadForm";
+import { TelegramMessage } from "./TelegramMessage";
 
 // The number runs to its new value.
 function AnimatedPrice({ value }: { value: number }) {
@@ -51,13 +51,11 @@ function AnimatedPrice({ value }: { value: number }) {
 export function CalculatorDialog() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [state, setState] = useState<CalcState>(initialCalc);
-  const [sent, setSent] = useState(false);
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
     const open = () => {
-      setSent(false);
       dialog.showModal();
       pauseScroll();
     };
@@ -179,17 +177,9 @@ export function CalculatorDialog() {
             {PRICES_ARE_DRAFT ? <p className="calc-draft">Цены пока условные</p> : null}
           </div>
 
-          {sent ? (
-            <p className="t-h3">Заявка у нас. Напишем вам с точным расчётом.</p>
-          ) : (
-            <LeadForm
-              source="Калькулятор"
-              details={`${calcSummary(state)}. Оценка: ${formatPrice(price)}`}
-              submitLabel="Получить точный расчёт"
-              withBusiness={false}
-              onSent={() => setSent(true)}
-            />
-          )}
+          <TelegramMessage
+            text={`Здравствуйте! Хочу обсудить проект из калькулятора на сайте.\n\nПроект: ${calcSummary(state)}\nПримерная стоимость: ${formatPrice(price)}`}
+          />
         </aside>
       </div>
     </dialog>

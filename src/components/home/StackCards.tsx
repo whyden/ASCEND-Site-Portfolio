@@ -28,14 +28,33 @@ export function StackCards({
     const cards = Array.from(root.children) as HTMLElement[];
     const last = cards[cards.length - 1];
 
-    return subscribeScroll(() => {
+    let near = true;
+    let place = -1;
+    let flat = false;
+    const watcher = new IntersectionObserver(
+      ([entry]) => {
+        near = entry.isIntersecting;
+      },
+      { rootMargin: "40% 0px" },
+    );
+    watcher.observe(root);
+    const onResize = () => {
+      place = -1;
+    };
+    window.addEventListener("resize", onResize);
+
+    const stop = subscribeScroll(() => {
       if (!stacking.matches) {
+        if (flat) return;
+        flat = true;
         cards.forEach((card) => {
           card.style.transform = "";
         });
         head.style.transform = "";
         return;
       }
+      flat = false;
+      if (!near) return;
 
       cards.forEach((card, index) => {
         const next = cards[index + 1];
@@ -48,11 +67,17 @@ export function StackCards({
 
       // Once the last card moves up past its place, the title moves up by the same amount.
       if (last) {
-        const place = parseFloat(getComputedStyle(last).top) || 0;
+        if (place < 0) place = parseFloat(getComputedStyle(last).top) || 0;
         const shift = Math.min(0, last.getBoundingClientRect().top - place);
         head.style.transform = shift < 0 ? `translateY(${shift.toFixed(1)}px)` : "";
       }
     });
+
+    return () => {
+      stop();
+      watcher.disconnect();
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
 
   return (
