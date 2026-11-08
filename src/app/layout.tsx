@@ -27,7 +27,8 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(site.url),
+  // Only the domain: Next adds the folder of the site to the addresses by itself.
+  metadataBase: new URL(new URL(site.url).origin),
   title: {
     default: `${site.name}: сайты на Next.js, калькуляторы и AI Telegram-боты`,
     template: `%s | ${site.name}`,
