@@ -3,16 +3,16 @@
 import { ArrowUpRight } from "@/components/brand/Logo";
 import { Glass } from "@/components/fx/Glass";
 import type { CaseStudy } from "@/data/cases";
-import { CasePreview } from "./CasePreview";
+import { CaseCover } from "./CaseCover";
 
-// A case as a glass card: the screenshot, the name and a short description.
+// A case as a glass card: a cover in the style of the client's site, the name and a short description.
 // A click anywhere on the card opens the details (see CaseDialog);
 // "Перейти на сайт" opens the site itself in a new tab.
 export function CaseCard({ item, onOpen }: { item: CaseStudy; onOpen: (from: DOMRect) => void }) {
   return (
     <Glass as="article" still className="case-card">
       <div className="case-preview">
-        <CasePreview item={item} />
+        <CaseCover item={item} />
       </div>
       <div className="case-text">
         <span className="t-small soft">{item.niche}</span>

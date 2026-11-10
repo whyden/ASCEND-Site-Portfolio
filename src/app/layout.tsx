@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Jost, Manrope } from "next/font/google";
+import { Jost, Manrope, Playfair_Display } from "next/font/google";
 import "lenis/dist/lenis.css";
 import { CalculatorDialog } from "@/components/forms/CalculatorDialog";
 import { IntroGate } from "@/components/fx/IntroGate";
 import { PageCurtain } from "@/components/fx/PageCurtain";
-import { PressFx } from "@/components/fx/PressFx";
 import { SmoothScroll } from "@/components/fx/SmoothScroll";
 import { Analytics } from "@/components/layout/Analytics";
 import { Footer } from "@/components/layout/Footer";
@@ -17,6 +16,16 @@ const jost = Jost({
   weight: ["300", "400", "500"],
   variable: "--font-jost",
   display: "swap",
+});
+
+// The lettering of the covers of the beauty cases. Not preloaded: the browser takes it only where it is used.
+const playfair = Playfair_Display({
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "500"],
+  style: ["normal", "italic"],
+  variable: "--font-playfair",
+  display: "swap",
+  preload: false,
 });
 
 const manrope = Manrope({
@@ -54,7 +63,7 @@ const INTRO_SCRIPT = `(function(){var d=document.documentElement,s="done";try{if
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ru" className={`${jost.variable} ${manrope.variable}`} suppressHydrationWarning>
+    <html lang="ru" className={`${jost.variable} ${manrope.variable} ${playfair.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
         <noscript>
@@ -69,7 +78,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Footer />
         <CalculatorDialog />
         <PageCurtain />
-        <PressFx />
         <Analytics />
       </body>
     </html>

@@ -29,7 +29,12 @@ export function Intro() {
       timers.forEach(clearTimeout);
       running.forEach((animation) => animation.cancel());
       window.__ascendIntro = "done";
-      document.documentElement.setAttribute("data-intro", "done");
+      // The first screen was empty behind the intro. Now that the intro is over it comes in piece by piece:
+      // the styles read data-reveal, and the mark is taken off once the show is over.
+      const html = document.documentElement;
+      html.setAttribute("data-reveal", "1");
+      window.setTimeout(() => html.removeAttribute("data-reveal"), 3400);
+      html.setAttribute("data-intro", "done");
       try {
         sessionStorage.setItem("ascend-intro", "1");
       } catch {

@@ -32,7 +32,7 @@ npm run build
 | Скриншоты кейсов | `public/cases/`, пути в `src/data/cases.ts` |
 | Цены в калькуляторе | `src/data/calculator.ts` |
 | Цвета и анимации | `src/app/globals.css` |
-| Живой фон (логотип в дыму) | `src/components/fx/Smoke.tsx` |
+| Фон: размытые круги света на трёх глубинах (сила блюра и параллакса вверху файла) | `src/components/fx/Smoke.tsx` |
 | Первый экран и полёт в логотип | `src/components/home/HeroScene.tsx` |
 | Насколько блоки наклоняются за курсором | `src/lib/pointer.ts` |
 | Сцены в карточках услуг | `src/components/home/DemoSpeed.tsx`, `DemoCalc.tsx`, `DemoBot.tsx` |

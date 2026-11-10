@@ -14,7 +14,6 @@ import { clamp, prefersReducedMotion, range, smooth, subscribeScroll } from "@/l
 // 3. The offer shows through the facets while we fly into them, stays a moment once we are inside,
 //    and the page moves on.
 
-const LOGO_LIGHT = 0.7;
 // The share of the scene spent on the flight into the logo; the rest belongs to the offer.
 const DIVE_END = 0.5;
 
@@ -59,11 +58,10 @@ export function HeroScene() {
     const body = bodyRef.current;
     const mark = markRef.current;
     const logo = stage?.querySelector<HTMLElement>(".smoke-logo");
-    const soft = stage?.querySelector<HTMLElement>(".smoke-soft");
     const light = stage?.querySelector<HTMLElement>(".smoke-light");
     const lean = stage?.querySelector<HTMLElement>(".smoke-lean");
     const statement = stage?.querySelector<HTMLElement>(".hero-statement");
-    if (!scene || !stage || !body || !mark || !logo || !soft || !light || !statement) return;
+    if (!scene || !stage || !body || !mark || !logo || !light || !statement) return;
     mark.style.opacity = "1";
     if (prefersReducedMotion()) {
       stage.style.setProperty("--s", "1");
@@ -132,11 +130,8 @@ export function HeroScene() {
       const scale = Math.pow(maxScale, eased);
       logo.style.transform = `translate(${(dx * eased).toFixed(1)}px, ${(dy * eased).toFixed(1)}px) scale(${scale.toFixed(3)})`;
 
-      soft.style.opacity = (LOGO_LIGHT * (1 - range(d, 0.1, 0.2))).toFixed(3);
-      soft.style.visibility = d >= 0.2 ? "hidden" : "visible";
-
-      // Inside the facet the flowing light turns to its light palette. At the very end of the scene
-      // it fades to plain fog, so the next section can bring its own light in without a seam.
+      // Inside the facet the background turns to its light palette. At the very end of the scene
+      // it fades to plain fog, so the next section can bring its own background in without a seam.
       lightMix.current = range(d, 0.7, 0.9);
       light.style.opacity = (1 - range(p, 0.94, 0.995)).toFixed(3);
 
@@ -180,7 +175,7 @@ export function HeroScene() {
   return (
     <section ref={sceneRef} className="hero-scene" aria-label="Главный экран">
       <div ref={stageRef} className="hero-stage tone-dark">
-        <Smoke gain={LOGO_LIGHT} mixRef={lightMix}>
+        <Smoke mixRef={lightMix}>
           <Mark ref={markRef} className="hero-dive" />
         </Smoke>
 

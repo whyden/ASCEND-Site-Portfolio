@@ -13,6 +13,8 @@ export type CaseShots = {
 
 export type CaseStudy = {
   slug: string;
+  /** The cover on the card, in the style of the client's site. Without it the card shows the screenshot. */
+  cover?: "tatuazh" | "almari" | "taranova";
   /** What we made, the name of the card. */
   title: string;
   /** Who it is for, shown on the cover when there are no screenshots yet. */
@@ -29,6 +31,7 @@ export type CaseStudy = {
 export const cases: CaseStudy[] = [
   {
     slug: "tatuazh-kazan",
+    cover: "tatuazh",
     title: "Сайт-визитка для салона красоты",
     brand: "Татуаж-ПМ студия",
     niche: "Красота · Казань",
@@ -50,6 +53,7 @@ export const cases: CaseStudy[] = [
   },
   {
     slug: "almari",
+    cover: "almari",
     title: "Продающий сайт для студии красоты «ALMARI»",
     brand: "ALMARI",
     niche: "Красота · Липецк",
@@ -78,6 +82,7 @@ export const cases: CaseStudy[] = [
   },
   {
     slug: "taranova-permanent",
+    cover: "taranova",
     title: "Сайт студии красоты с обучением и ИИ-ассистентом для «Taranova Permanent»",
     brand: "Taranova Permanent",
     niche: "Красота и обучение · Пенза",
